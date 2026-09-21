@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Churn Intelligence Portal | Telco Test Portfolio</title>
+  
+  <!-- Modern Non-AI Typography: Plus Jakarta Sans for UI + Newsreader for Editorial Elegance + JetBrains Mono for Data -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Navigation & Institutional Header -->
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div class="brand-group">
+        <div class="brand-mark">
+          <span class="mark-square"></span>
+          <span class="mark-label">TELCO // RETENTION</span>
+        </div>
+        <div class="brand-divider"></div>
+        <div class="brand-titles">
+          <h1>Customer Churn Intelligence Portal</h1>
+          <p class="brand-subtitle">Evaluation & Analysis Environment &bull; Model: <code>chrunPipe.ipynb</code> (DecisionTree)</p>
+        </div>
+      </div>
+
+      <div class="masthead-controls">
+        <button id="predict-all-btn" class="btn-predict-all" title="Run model inference on all 1,409 evaluation customers">
+          <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+          <span id="predict-all-text">Predict All Cohort (1,409)</span>
+        </button>
+
+        <button id="reset-predictions-btn" class="btn-reset-predictions" title="Reset all records to unpredicted state">
+          <svg class="btn-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path>
+          </svg>
+          <span>Reset</span>
+        </button>
+
+        <div class="badge-status">
+          <span class="status-dot"></span>
+          <span class="status-text" id="status-text">Pipeline Ready</span>
+        </div>
+        <div class="dataset-meta">
+          <span class="meta-label">Evaluation Cohort</span>
+          <span class="meta-val">1,409 Test Customers (20% Stratified)</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Key Metrics Strip -->
+  <section class="metrics-ribbon">
+    <div class="metric-card">
+      <span class="card-caption">Test Cohort Size</span>
+      <div class="metric-number-group">
+        <span class="card-value" id="kpi-total">1,409</span>
+        <span class="card-unit">records</span>
+      </div>
+      <span class="card-hint" id="kpi-progress-desc">0 of 1,409 predicted</span>
+    </div>
+
+    <div class="metric-card alert-card">
+      <span class="card-caption">Predicted Churn At-Risk</span>
+      <div class="metric-number-group">
+        <span class="card-value val-alert" id="kpi-predicted-churn">--</span>
+        <span class="card-percentage" id="kpi-predicted-churn-pct">--%</span>
+      </div>
+      <span class="card-hint">Identified for active retention</span>
+    </div>
+
+    <div class="metric-card warning-card">
+      <span class="card-caption">High Risk Tier (&ge;60% Prob)</span>
+      <div class="metric-number-group">
+        <span class="card-value val-high" id="kpi-high-risk">--</span>
+        <span class="card-unit">accounts</span>
+      </div>
+      <span class="card-hint">Immediate intervention priority</span>
+    </div>
+
+    <div class="metric-card success-card">
+      <span class="card-caption">Low Risk Tier (&lt;35% Prob)</span>
+      <div class="metric-number-group">
+        <span class="card-value val-low" id="kpi-low-risk">--</span>
+        <span class="card-unit">accounts</span>
+      </div>
+      <span class="card-hint">Stable organic retention</span>
+    </div>
+
+    <div class="metric-card accent-card">
+      <span class="card-caption">Historical Baseline Accuracy</span>
+      <div class="metric-number-group">
+        <span class="card-value val-accent" id="kpi-accuracy">--%</span>
+      </div>
+      <span class="card-hint">Model vs Ground Truth Agreement</span>
+    </div>
+  </section>
+
+  <!-- Main Content Layout -->
+  <main class="portal-main">
+
+    <!-- Search, Filter & Operations Toolbar -->
+    <div class="toolbar-panel">
+      <div class="search-box">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="search-input" placeholder="Search by Customer ID, contract, payment method, or internet..." autocomplete="off">
+        <button id="search-clear-btn" class="clear-btn" title="Clear search" style="display:none;">&times;</button>
+      </div>
+
+      <div class="filters-row">
+        <!-- Risk Tier Filter Pills -->
+        <div class="filter-pills" id="risk-filter-group">
+          <span class="filter-group-label">Filter:</span>
+          <button class="pill-btn active" data-risk="all">All (1,409)</button>
+          <button class="pill-btn pill-pending" data-risk="pending">Unpredicted</button>
+          <button class="pill-btn pill-high" data-risk="high">High Risk</button>
+          <button class="pill-btn pill-medium" data-risk="medium">Medium Risk</button>
+          <button class="pill-btn pill-low" data-risk="low">Low Risk</button>
+        </div>
+
+        <!-- Dropdowns for fine tuning -->
+        <div class="select-filters">
+          <div class="filter-dropdown-wrapper">
+            <label for="contract-filter">Contract:</label>
+            <select id="contract-filter">
+              <option value="all">All Contracts</option>
+              <option value="Month-to-month">Month-to-month</option>
+              <option value="One year">One year</option>
+              <option value="Two year">Two year</option>
+            </select>
+          </div>
+
+          <div class="filter-dropdown-wrapper">
+            <label for="internet-filter">Internet:</label>
+            <select id="internet-filter">
+              <option value="all">All Services</option>
+              <option value="Fiber optic">Fiber optic</option>
+              <option value="DSL">DSL</option>
+              <option value="No">No Internet</option>
+            </select>
+          </div>
+
+          <div class="filter-dropdown-wrapper">
+            <label for="sort-select">Sort By:</label>
+            <select id="sort-select">
+              <option value="churn_prob-desc">Churn Probability (High &rarr; Low)</option>
+              <option value="churn_prob-asc">Churn Probability (Low &rarr; High)</option>
+              <option value="tenure-asc">Tenure (Shortest &rarr; Longest)</option>
+              <option value="tenure-desc">Tenure (Longest &rarr; Shortest)</option>
+              <option value="MonthlyCharges-desc">Monthly Charges (Highest first)</option>
+              <option value="MonthlyCharges-asc">Monthly Charges (Lowest first)</option>
+              <option value="customerID-asc">Customer ID (A &rarr; Z)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Filter Indicators & Results Count -->
+    <div class="results-header">
+      <div class="count-display">
+        Showing <span id="results-count" class="mono">--</span> matching customers
+        <span id="active-filter-badge" class="filter-tag" style="display:none;"></span>
+      </div>
+      <div class="quick-guide">
+        <span class="guide-item"><span class="dot-swatch pending"></span> Unpredicted</span>
+        <span class="guide-item"><span class="dot-swatch high"></span> High Risk (&ge;60%)</span>
+        <span class="guide-item"><span class="dot-swatch med"></span> Medium (35-60%)</span>
+        <span class="guide-item"><span class="dot-swatch low"></span> Low (&lt;35%)</span>
+        <span class="guide-item hint-text">&bull; Predict individually or run &ldquo;Predict All&rdquo;</span>
+      </div>
+    </div>
+
+    <!-- Customers Data Table Container -->
+    <div class="table-container">
+      <table class="customer-table" id="customer-table">
+        <thead>
+          <tr>
+            <th class="th-id">Customer ID</th>
+            <th class="th-risk">Churn Risk</th>
+            <th class="th-verdict">Prediction</th>
+            <th class="th-actual">Ground Truth</th>
+            <th class="th-tenure">Tenure</th>
+            <th class="th-contract">Contract</th>
+            <th class="th-internet">Internet</th>
+            <th class="th-payment">Payment Method</th>
+            <th class="th-monthly text-right">Monthly Bill</th>
+            <th class="th-total text-right">Total Charges</th>
+            <th class="th-actions text-center">Action</th>
+          </tr>
+        </thead>
+        <tbody id="customer-tbody">
+          <!-- Populated by app.js -->
+          <tr>
+            <td colspan="11" class="loading-cell">
+              <div class="spinner"></div>
+              <span>Loading test portfolio customers...</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination Footer -->
+    <div class="pagination-footer">
+      <div class="page-size-selector">
+        <label for="per-page-select">Per page:</label>
+        <select id="per-page-select">
+          <option value="25" selected>25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value="250">250</option>
+          <option value="1409">Show All (1,409)</option>
+        </select>
+      </div>
+
+      <div class="page-navigation">
+        <button id="prev-page-btn" class="nav-btn" disabled>&larr; Previous</button>
+        <span class="page-indicator">
+          Page <strong id="current-page-num" class="mono">1</strong> of <span id="total-pages-num" class="mono">1</span>
+        </span>
+        <button id="next-page-btn" class="nav-btn">Next &rarr;</button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Detailed Customer Analysis Drawer / Slide-Out Panel -->
+  <div class="drawer-backdrop" id="drawer-backdrop"></div>
+  
+  <aside class="analysis-drawer" id="analysis-drawer" aria-hidden="true">
+    <div class="drawer-header">
+      <div class="drawer-title-group">
+        <span class="drawer-kicker">DETAILED RETENTION DOSSIER</span>
+        <h2 id="drawer-cust-id" class="drawer-title">CUST-0000</h2>
+        <div class="drawer-header-badges">
+          <span id="drawer-risk-badge" class="risk-badge">HIGH RISK</span>
+          <span id="drawer-verdict-badge" class="verdict-badge">Likely to Churn</span>
+          <span id="drawer-actual-badge" class="actual-badge">Actual: Churned</span>
+        </div>
+      </div>
+      <button class="drawer-close-btn" id="drawer-close-btn" title="Close drawer">&times;</button>
+    </div>
+
+    <div class="drawer-body" id="drawer-body">
+      <!-- Loaded dynamically via app.js -->
+      <div class="drawer-loading">
+        <div class="spinner"></div>
+        <span>Evaluating customer profile &amp; tracing decision tree...</span>
+      </div>
+    </div>
+  </aside>
+
+  <script src="app.js"></script>
+</body>
+</html>
