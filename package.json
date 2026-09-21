@@ -1,0 +1,18 @@
+{
+  "name": "churn-portal",
+  "version": "1.0.0",
+  "description": "Customer Churn Intelligence Portal",
+  "main": "backend/server.py",
+  "scripts": {
+    "start": "python backend/server.py",
+    "dev": "python backend/server.py"
+  },
+  "keywords": [
+    "churn",
+    "machine-learning",
+    "flask",
+    "decision-tree"
+  ],
+  "author": "",
+  "license": "MIT"
+}
