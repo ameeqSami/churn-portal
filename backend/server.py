@@ -6,6 +6,9 @@ from flask import Flask, jsonify, request, send_from_directory
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 FRONTEND_DIR = os.path.abspath(os.path.join(CURRENT_DIR, "..", "frontend"))
 
+if CURRENT_DIR not in sys.path:
+    sys.path.insert(0, CURRENT_DIR)
+
 from model_service import ChurnModelService
 
 app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path="")
